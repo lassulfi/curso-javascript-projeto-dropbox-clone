@@ -8,7 +8,25 @@ class DropBoxController {
         this.fileNameEl = document.querySelector('.filename');
         this.timeLeftEl = document.querySelector('.timeleft');
 
+        this.connectToFirebase();
+
         this.initEvents();
+    }
+
+    connectToFirebase(){
+        // Your web app's Firebase configuration
+        var firebaseConfig = {
+            apiKey: "",
+            authDomain: "",
+            databaseURL: "",
+            projectId: "",
+            storageBucket: "",
+            messagingSenderId: "",
+            appId: ""
+        };
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
     }
 
     initEvents() {
