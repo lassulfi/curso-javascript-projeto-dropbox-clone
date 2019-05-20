@@ -15,7 +15,7 @@ class DropBoxController {
 
     connectToFirebase(){
         // Your web app's Firebase configuration
-        var firebaseConfig = {
+        let firebaseConfig = {
             apiKey: "",
             authDomain: "",
             databaseURL: "",
@@ -26,7 +26,6 @@ class DropBoxController {
         };
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
-
     }
 
     initEvents() {
@@ -34,10 +33,29 @@ class DropBoxController {
             this.inputFilesEl.click();
         });
         this.inputFilesEl.addEventListener('change', event => {
-            this.uploadTask(event.target.files);
+            this.btnSendFileEl.disabled = true;
+            this.uploadTask(event.target.files).then(responses => {
+                responses.forEach(response => {
+                    this.getFirebaseReference().push().set(response.files['input-file']);
+                });
+                this.uploadComplete();
+            }).catch(err => {
+                this.uploadComplete();
+                console.error(err);
+            });
             this.modalShow();
-            this.inputFilesEl.value = '';
+            
         });
+    }
+
+    uploadComplete() {
+        this.modalShow(false);
+        this.inputFilesEl.value = '';
+        this.btnSendFileEl.disabled = false;
+    }
+
+    getFirebaseReference(){
+        return firebase.database().ref('files');
     }
 
     modalShow(show = true) {
@@ -52,7 +70,6 @@ class DropBoxController {
                 let ajax = new XMLHttpRequest();
                 ajax.open('POST', '/upload');
                 ajax.onload = event => {
-                    this.modalShow(false);
                     try {
                         resolve(JSON.parse(ajax.responseText));
                     } catch (e) {
@@ -60,7 +77,6 @@ class DropBoxController {
                     }
                 };
                 ajax.onerror = event => {
-                    this.modalShow(false);
                     reject(event);
                 };
                 ajax.upload.onprogress = event => {
