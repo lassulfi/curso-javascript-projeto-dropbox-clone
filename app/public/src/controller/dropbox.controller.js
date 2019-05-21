@@ -286,6 +286,8 @@ class DropBoxController {
         li.dataset.key = key;
         li.innerHTML = `${this.getFileIconView(file)}<div class="name text-center">${file.name}</div>`;
 
+        this.initEventsLi(li);
+
         return li;
     }
 
@@ -297,6 +299,12 @@ class DropBoxController {
                 let data = item.val();
                 this.listFilesEl.appendChild(this.getFileView(key, data));
             });
+        });
+    }
+
+    initEventsLi(li){
+        li.addEventListener('click', e => {
+            li.classList.toggle('selected');
         });
     }
 }
