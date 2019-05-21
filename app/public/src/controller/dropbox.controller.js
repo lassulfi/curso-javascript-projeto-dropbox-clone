@@ -7,10 +7,13 @@ class DropBoxController {
         this.progressBarEl = this.snackModalEl.querySelector('.mc-progress-bar-fg');
         this.fileNameEl = document.querySelector('.filename');
         this.timeLeftEl = document.querySelector('.timeleft');
+        this.listFilesEl = document.querySelector('#list-of-files-and-directories');
 
         this.connectToFirebase();
 
         this.initEvents();
+
+        this.readFiles();
     }
 
     connectToFirebase(){
@@ -217,6 +220,7 @@ class DropBoxController {
                 </svg>`;
             case 'audio/mp3':
             case 'audio/ogg':
+            case 'audio/x-ms-wma':
                 return `
                 <svg width="160" height="160" viewBox="0 0 160 160" class="mc-icon-template-content tile__preview tile__preview--icon">
                     <title>content-audio-large</title>
@@ -277,11 +281,22 @@ class DropBoxController {
         }
     }
 
-    getFileView(file) {
-        return `
-        <li>
-            ${this.getFileIconView(file)}
-            <div class="name text-center">${file.name}</div>
-        </li>`;
+    getFileView(key, file) {
+        let li = document.createElement('li');
+        li.dataset.key = key;
+        li.innerHTML = `${this.getFileIconView(file)}<div class="name text-center">${file.name}</div>`;
+
+        return li;
+    }
+
+    readFiles() {
+        this.getFirebaseReference().on('value', snapshot => {
+            this.listFilesEl.innerHTML = "";
+            snapshot.forEach(item => {
+                let key = item.key;
+                let data = item.val();
+                this.listFilesEl.appendChild(this.getFileView(key, data));
+            });
+        });
     }
 }
