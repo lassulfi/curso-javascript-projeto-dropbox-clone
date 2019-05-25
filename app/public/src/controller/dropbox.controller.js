@@ -3,6 +3,7 @@ class DropBoxController {
     constructor() {
         this.currentFolder = ['hcode'];
 
+        this.navEl = document.querySelector('#browse-location');
         this.btnSendFileEl = document.querySelector('#btn-send-file');
         this.inputFilesEl = document.querySelector('#files');
         this.snackModalEl = document.querySelector('#react-snackbar-root');
@@ -20,7 +21,7 @@ class DropBoxController {
 
         this.initEvents();
 
-        this.readFiles();
+        this.openFolder();
     }
 
     connectToFirebase(){
@@ -135,8 +136,10 @@ class DropBoxController {
         this.btnSendFileEl.disabled = false;
     }
 
-    getFirebaseReference(){
-        return firebase.database().ref('files');
+    getFirebaseReference(path){
+        if(!path) path = this.currentFolder.join('/');
+
+        return firebase.database().ref(path);
     }
 
     modalShow(show = true) {
@@ -381,18 +384,24 @@ class DropBoxController {
     }
 
     readFiles() {
+        this.lastFolder = this.currentFolder.join('/');
         this.getFirebaseReference().on('value', snapshot => {
             this.listFilesEl.innerHTML = "";
             snapshot.forEach(item => {
                 let key = item.key;
                 let data = item.val();
-                this.listFilesEl.appendChild(this.getFileView(key, data));
+                if(data.type) {
+                    this.listFilesEl.appendChild(this.getFileView(key, data));
+                }
             });
         });
     }
 
     initEventsLi(li){
+        let clickCount = 0;
+        
         li.addEventListener('click', e => {
+            clickCount++;
             if(e.shiftKey){
                 let firstLi = this.listFilesEl.querySelector('.selected');
                 if(firstLi){
@@ -421,6 +430,63 @@ class DropBoxController {
 
             li.classList.toggle('selected');
             this.listFilesEl.dispatchEvent(this.onSelectionChange);
+
+            if(clickCount === 2){
+                let file = JSON.parse(li.dataset.file);
+                switch(file.type){
+                    case 'folder':
+                        this.currentFolder.push(file.name);
+                        this.openFolder();
+                        break;
+                    default:
+                        window.open(`/file?path=${file.path}`);
+                        break;
+                }
+                clickCount = 0;
+            }
+        });
+    }
+    
+    openFolder() {
+        if(this.lastFolder) this.getFirebaseReference(this.lastFolder).off('value');
+        
+        this.renderNav();
+        this.readFiles();
+    }
+
+    renderNav() {
+        let nav = document.createElement('nav');
+        let path = [];
+
+        for(let i = 0; i < this.currentFolder.length; i++) {
+            let folderName = this.currentFolder[i];
+            path.push(folderName);
+
+            let span = document.createElement('span');  
+            if((i + 1) === this.currentFolder.length){
+                span.innerHTML = folderName;
+            } else {
+                span.className = "breadcrumb-segment__wrapper";
+                span.innerHTML = `
+                    <span class="ue-effect-container uee-BreadCrumbSegment-link-0">
+                        <a href="#" data-path="${path.join('/')}" class="breadcrumb-segment">${folderName}</a>
+                    </span>
+                    <svg width="24" height="24" viewBox="0 0 24 24" class="mc-icon-template-stateless" style="top: 4px; position: relative;">
+                        <title>arrow-right</title>
+                        <path d="M10.414 7.05l4.95 4.95-4.95 4.95L9 15.534 12.536 12 9 8.464z" fill="#637282" fill-rule="evenodd"></path>
+                    </svg>
+                `;
+            }
+            nav.appendChild(span);
+        }
+        this.navEl.innerHTML = nav.innerHTML;
+        this.navEl.querySelectorAll('a').forEach(a => {
+            a.addEventListener('click', event => {
+                event.preventDefault();
+
+                this.currentFolder = a.dataset.path.split('/');
+                this.openFolder();                
+            });
         });
     }
 }
