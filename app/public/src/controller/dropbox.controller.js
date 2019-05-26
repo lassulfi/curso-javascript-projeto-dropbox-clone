@@ -515,7 +515,8 @@ class DropBoxController {
                         this.openFolder();
                         break;
                     default:
-                        window.open(`/file?path=${file.path}`);
+                        console.log(file.path);
+                        window.open(file.path);
                         break;
                 }
                 clickCount = 0;
